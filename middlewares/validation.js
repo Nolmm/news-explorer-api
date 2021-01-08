@@ -1,5 +1,7 @@
 const { Joi, Segments } = require('celebrate');
 
+const pattern = /^(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w.-]+)+[\w\-._~:/?#[\]@!$&'()*+,;=.]+$/;
+
 const authCheck = {
   [Segments.BODY]: Joi.object().keys({
     email: Joi.string().email().required(),
@@ -11,7 +13,8 @@ const authCheck = {
 const signupCheck = {
   [Segments.BODY]: Joi.object().keys({
     email: Joi.string().email().required(),
-    password: Joi.string().min(8).required(),
+    password: Joi.string().min(8).required().trim()
+      .regex(/(^\S*)$/),
     name: Joi.string().min(2).max(30),
   }),
 };
@@ -29,28 +32,21 @@ const createArticleCheck = {
     text: Joi.string().required(),
     date: Joi.string().required(),
     source: Joi.string().required(),
-    link: Joi.string().uri().required(),
-    image: Joi.string().uri().required(),
+    link: Joi.string().pattern(pattern).required(),
+    image: Joi.string().pattern(pattern).required(),
   }),
 };
 
 const deleteArticleCheck = {
   [Segments.PARAMS]: Joi.object().keys({
-    articleId: Joi.string().alphanum().length(24).required(),
+    articleId: Joi.string().hex().length(24).required(),
   }),
 };
-
-// const getUserCheck = {
-//   [Segments.PARAMS]: Joi.object().keys({
-//     _id: Joi.string().alphanum().length(24).required(),
-//   }),
-// };
 
 module.exports = {
   authCheck,
   tokenCheck,
   createArticleCheck,
   deleteArticleCheck,
-  // getUserCheck,
   signupCheck,
 };

@@ -2,10 +2,10 @@ const cors = require('cors');
 require('dotenv').config();
 const express = require('express');
 const helmet = require('helmet');
-const rateLimit = require('express-rate-limit');
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
 const { celebrate, errors } = require('celebrate');
+const limiter = require('./middlewares/limiter.js');
 const { NotFoundError } = require('./errors/not-found-err.js');
 const { authCheck, tokenCheck, signupCheck } = require('./middlewares/validation.js');
 const { requestLogger, errorLogger } = require('./middlewares/logger.js');
@@ -13,13 +13,11 @@ const { requestLogger, errorLogger } = require('./middlewares/logger.js');
 const { PORT = 3000 } = process.env;
 
 const app = express();
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // за 15 минут
-  max: 100,
-});
+
 const { userRouter } = require('./routers/users.js');
 const { articleRouter } = require('./routers/articles.js');
 const { login, createUser } = require('./controllers/users.js');
+const handlerErrors = require('./middlewares/handlerErrors.js');
 const auth = require('./middlewares/auth.js');
 
 app.use(cors());
@@ -47,19 +45,8 @@ app.use((req, res, next) => {
 });
 app.use(errorLogger);
 app.use(errors());
-app.use((err, req, res, next) => {
-  // если у ошибки нет статуса, выставляем 500
-  const { statusCode = 500, message } = err;
-  res
-    .status(statusCode)
-    .send({
-      // проверяем статус и выставляем сообщение в зависимости от него
-      message: statusCode === 500
-        ? 'На сервере произошла ошибка'
-        : message,
-    });
-  next();
-});
+app.use(handlerErrors);
+
 app.listen(PORT, () => {
   console.log(`App listening on port ${PORT}`);
 });

@@ -8,9 +8,13 @@ const NotFoundError = require('../errors/not-found-err.js');
 const ConflictError = require('../errors/conflict-err.js');
 
 const getUserMe = (req, res, next) => {
-  User.findOne({ _id: req.user._id })
-    .orFail(() => { throw new NotFoundError('Пользователь не найден'); })
-    .then((user) => res.status(200).send(user))
+  User.findById(req.user._id)
+    .then((user) => {
+      if (!user) {
+        throw new NotFoundError('Пользователь не найден');
+      }
+      res.status(200).send(user);
+    })
     .catch(next);
 };
 

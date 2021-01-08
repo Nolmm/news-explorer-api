@@ -4,10 +4,15 @@ const ForbiddenError = require('../errors/forbidden-err.js');
 const NotFoundError = require('../errors/not-found-err.js');
 const InvalidDataError = require('../errors/invalid-data-err.js');
 
-const getArticles = (req, res) => {
-  Article.find()
-    .then((data) => res.send(data))
-    .catch(() => res.status(500).send({ message: 'Ошибка!' }));
+const getArticles = (req, res, next) => {
+  Article.find({ owner: req.user._id })
+    .then((data) => {
+      if (!data) {
+        throw new NotFoundError('Не найдено');
+      }
+      res.status(200).send(data);
+    })
+    .catch(next);
 };
 
 const createArticle = (req, res, next) => {
@@ -28,7 +33,7 @@ const createArticle = (req, res, next) => {
     .then((article) => res.status(200).send(article))
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        throw new InvalidDataError('Некорректный запрос');
+        next(new InvalidDataError('Некорректный запрос'));
       } else {
         next(err);
       }
